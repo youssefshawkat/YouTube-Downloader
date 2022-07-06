@@ -1,8 +1,6 @@
 import ctypes
 import os
-
 import PySimpleGUI as sg
-import pytube
 from pytube import YouTube
 
 
@@ -54,7 +52,7 @@ def start():
     event, values = window.read()
     try:
         if values["Type"] == "Video":
-            pytube.YouTube(url).streams.get_by_resolution(values['quality']).download(values['Browse'])
+            YouTube(url).streams.filter(res=values['quality']).first().download(output_path=values['Browse'])
             ctypes.windll.user32.MessageBoxW(0, "The Video is Downloaded Successfully", "Congratulations")
         else:
             yt = YouTube(url)
