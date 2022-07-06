@@ -2,6 +2,8 @@ import ctypes
 import os
 import PySimpleGUI as sg
 from pytube import YouTube
+import ffmpeg
+
 
 
 def url_window():
@@ -27,7 +29,6 @@ def url_window():
     streams = {x for x in streams if x is not None}
     global streams_list
     streams_list = list(streams)
-    # https://www.youtube.com/watch?v=1La4QzGeaaQ&t=6s
     for x in range(len(streams_list)):
         streams_list[x] = streams_list[x].replace('p', '')
 
@@ -52,7 +53,26 @@ def start():
     event, values = window.read()
     try:
         if values["Type"] == "Video":
-            YouTube(url).streams.filter(res=values['quality']).first().download(output_path=values['Browse'])
+            try:
+                yt = YouTube(url).streams.filter(progressive=True,res=values['quality'])
+                ys = yt.get_highest_resolution()
+                ys.download(output_path=values['Browse'])
+            except:
+                yt = YouTube(url)
+                try:
+                    os.chdir(values['Browse'])
+                except:
+                    file_name = yt.streams.first().default_filename.replace(".3gpp", "")
+                    # download audio only
+                    yt.streams.filter(abr="160kbps", progressive=False).first().download(filename="audio.mp3")
+                    audio = ffmpeg.input("audio.mp3")
+                    # download video only
+                    yt.streams.filter(res=values['quality'], progressive=False).first().download(filename="video.mp4")
+                    video = ffmpeg.input("video.mp4")
+                    ffmpeg.output(audio, video, file_name+".mp4").run(overwrite_output=True)
+                    os.remove('audio.mp3')
+                    os.remove('video.mp4')
+
             ctypes.windll.user32.MessageBoxW(0, "The Video is Downloaded Successfully", "Congratulations")
         else:
             yt = YouTube(url)
