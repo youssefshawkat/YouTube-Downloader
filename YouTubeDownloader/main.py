@@ -1,6 +1,7 @@
 import ctypes
 import os
 import PySimpleGUI as sg
+import pytube
 from pytube import YouTube
 import ffmpeg
 
@@ -53,25 +54,30 @@ def start():
     event, values = window.read()
     try:
         if values["Type"] == "Video":
+            yt = YouTube(url).streams.filter(progressive=True, res=values['quality'])
+            ys = yt.get_highest_resolution()
             try:
-                yt = YouTube(url).streams.filter(progressive=True,res=values['quality'])
-                ys = yt.get_highest_resolution()
                 ys.download(output_path=values['Browse'])
             except:
                 yt = YouTube(url)
+
                 try:
                     os.chdir(values['Browse'])
                 except:
-                    file_name = yt.streams.first().default_filename.replace(".3gpp", "")
-                    # download audio only
-                    yt.streams.filter(abr="160kbps", progressive=False).first().download(filename="audio.mp3")
-                    audio = ffmpeg.input("audio.mp3")
-                    # download video only
-                    yt.streams.filter(res=values['quality'], progressive=False).first().download(filename="video.mp4")
-                    video = ffmpeg.input("video.mp4")
-                    ffmpeg.output(audio, video, file_name+".mp4").run(overwrite_output=True)
-                    os.remove('audio.mp3')
-                    os.remove('video.mp4')
+                    try:
+                        file_name = yt.streams.first().default_filename.replace(".3gpp", "")
+                        # download audio only
+                        yt.streams.filter(abr="160kbps", progressive=False).first().download(filename="audio.mp3")
+                        audio = ffmpeg.input("audio.mp3")
+                        # download video only
+                        yt.streams.filter(res=values['quality'], progressive=False).first().download(filename="video.mp4")
+                        video = ffmpeg.input("video.mp4")
+                        ffmpeg.output(audio, video, file_name+".mp4").run(overwrite_output=True)
+                        os.remove('audio.mp3')
+                        os.remove('video.mp4')
+                    except:
+                        pytube.YouTube(url).streams.get_highest_resolution().download(values['Browse'])
+
 
             ctypes.windll.user32.MessageBoxW(0, "The Video is Downloaded Successfully", "Congratulations")
         else:
