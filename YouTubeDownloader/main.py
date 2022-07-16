@@ -6,6 +6,17 @@ from pytube import YouTube
 import ffmpeg
 import sys
 
+from tkinter.messagebox import askyesno
+
+
+def confirm():
+    answer = askyesno(title='confirmation',
+                      message='Do you Want To Download Another Video/Song?')
+    if not answer:
+        sys.exit()
+    else:
+        url_window()
+
 
 def url_window():
     try:
@@ -42,7 +53,11 @@ def url_window():
 
 
 def start():
-    layout = [[sg.Text("Choose a Folder: ", font=('Times New Roman', 12)), sg.FolderBrowse()],
+    myVideo = YouTube(url)
+
+    layout = [
+              [sg.Text(myVideo.title, font=('Times New Roman', 14))],
+              [sg.Text("Choose a Folder: ", font=('Times New Roman', 14)), sg.FolderBrowse()],
               [sg.Text('Choose Your Preferred Quality: ', size=(30, 1), font=('Times New Roman', 13),
                        justification='left')],
               [sg.Combo(streams_list, key='quality', size=(30, 1))],
@@ -77,15 +92,17 @@ def start():
                     os.remove('audio.mp3')
                     os.remove('video.mp4')
 
-                    if not(os.path.exists(values['Browse'] + "/" + file_name + ".mp4")):
+                    if not (os.path.exists(values['Browse'] + "/" + file_name + ".mp4")):
                         raise FileNotFoundError
 
 
                 except:
 
-                 pytube.YouTube(url).streams.get_highest_resolution().download(values["Browse"])
+                    pytube.YouTube(url).streams.get_highest_resolution().download(values["Browse"])
 
             ctypes.windll.user32.MessageBoxW(0, "The Video is Downloaded Successfully", "Congratulations")
+            window.close()
+            confirm()
         else:
             yt = YouTube(url)
 
@@ -105,6 +122,7 @@ def start():
                 os.rename(out_file, new_file)
                 ctypes.windll.user32.MessageBoxW(0, "The Song is Downloaded Successfully", "Congratulations")
                 window.close()
+                confirm()
 
     except FileExistsError:
         ctypes.windll.user32.MessageBoxW(0, "File Already Exists", "Error!")
